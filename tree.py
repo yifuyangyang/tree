@@ -322,26 +322,40 @@ def create_plot(my_tree):
 
 # ========== 运行：建树 + 绘图 ==========
 # 示例数据集：天气与打球 (Play Tennis)
-weather_data = [
-    ['Sunny', 'Hot', 'High', False, 'No'],
-    ['Sunny', 'Hot', 'High', True, 'No'],
-    ['Overcast', 'Hot', 'High', False, 'Yes'],
-    ['Rain', 'Mild', 'High', False, 'Yes'],
-    ['Rain', 'Cool', 'Normal', False, 'Yes'],
-    ['Rain', 'Cool', 'Normal', True, 'No'],
-    ['Overcast', 'Cool', 'Normal', True, 'Yes'],
-    ['Sunny', 'Mild', 'High', False, 'No'],
-    ['Sunny', 'Cool', 'Normal', False, 'Yes'],
-    ['Rain', 'Mild', 'Normal', False, 'Yes'],
-    ['Sunny', 'Mild', 'Normal', True, 'Yes'],
-    ['Overcast', 'Mild', 'High', True, 'Yes'],
-    ['Overcast', 'Hot', 'Normal', False, 'Yes'],
-    ['Rain', 'Mild', 'High', True, 'No']
-]
+#weather_data = [
+#    ['Sunny', 'Hot', 'High', False, 'No'],
+#    ['Sunny', 'Hot', 'High', True, 'No'],
+#    ['Overcast', 'Hot', 'High', False, 'Yes'],
+#    ['Rain', 'Mild', 'High', False, 'Yes'],
+#    ['Rain', 'Cool', 'Normal', False, 'Yes'],
+#    ['Rain', 'Cool', 'Normal', True, 'No'],
+#    ['Overcast', 'Cool', 'Normal', True, 'Yes'],
+#    ['Sunny', 'Mild', 'High', False, 'No'],
+#    ['Sunny', 'Cool', 'Normal', False, 'Yes'],
+#    ['Rain', 'Mild', 'Normal', False, 'Yes'],
+#    ['Sunny', 'Mild', 'Normal', True, 'Yes'],
+#    ['Overcast', 'Mild', 'High', True, 'Yes'],
+#    ['Overcast', 'Hot', 'Normal', False, 'Yes'],
+#    ['Rain', 'Mild', 'High', True, 'No']
+#]
 
 # 特征标签
-labels = ['Outlook', 'Temperature', 'Humidity', 'Windy']
+#labels = ['age', 'prescript', 'astigmatic', 'tearRate']
 
 # 生成决策树
-tree = creat_tree(weather_data, labels[:])  # 注意传入拷贝 labels[:]
+#tree = creat_tree(weather_data, labels[:])  # 注意传入拷贝 labels[:]
+#create_plot(tree)
+
+lenspath = (r'C:\Users\E507\Desktop\tree\lenses.txt')
+
+def load_data(filepath):
+    data=[]
+    fr=open(filepath)
+    for line in fr:
+        line =line.strip().split('\t') 
+        data.append(line)
+    return data
+labels =['age','prescript','astigmatic','tearRate']
+dataset = load_data(lenspath)
+tree =creat_tree(dataset,labels[:])
 create_plot(tree)
