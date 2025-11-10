@@ -340,8 +340,20 @@ weather_data = [
 ]
 
 # 特征标签
-labels = ['Outlook', 'Temperature', 'Humidity', 'Windy']
+#labels = ['Outlook', 'Temperature', 'Humidity', 'Windy']
 
 # 生成决策树
-tree = creat_tree(weather_data, labels[:])  # 注意传入拷贝 labels[:]
+#tree = creat_tree(weather_data, labels[:])  # 注意传入拷贝 labels[:]
+#create_plot(tree)
+lenspath=(r'C:\Users\86183\OneDrive\Desktop\tree\lenses.txt')
+def load_data(filepath):
+    data=[]
+    fr=open(filepath)
+    for line in fr:
+        line=line.strip().split()
+        data.append(line)
+    return data
+labels_lenses=['年龄','屈光','散光','泪液分泌']
+dataset=load_data(lenspath)
+tree=creat_tree(dataset,labels_lenses[:])
 create_plot(tree)
