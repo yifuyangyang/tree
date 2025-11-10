@@ -76,7 +76,7 @@ def split_dataset(dataset, axis, value):
             reduced_feat_vec.extend(feat_vec[axis+1:])  # 取后面部分拼接起来
             # 把这个新样本加入到子数据集中
             ret_dataset.append(reduced_feat_vec)
-      # 返回划分后的数据集
+    # 返回划分后的数据集
     return ret_dataset
 
 
@@ -124,7 +124,7 @@ def choose_best_feature_split(dataset):
         for value in unique_val:
             # 按照该特征的某个取值划分数据集
             sub_dataset = split_dataset(dataset, i, value)
-             # 计算该子集占整个数据集的比例
+            # 计算该子集占整个数据集的比例
             prob = len(sub_dataset)/float(len(dataset))
             # 累加加权熵（概率 * 子集熵）
             new_entropy += prob*cal_shannon_ent(sub_dataset)
@@ -148,7 +148,7 @@ def majority_cnt(class_list):
         一个按类别出现次数从多到少排列的列表，例如：
         [('yes', 3), ('no', 2)]
     """
-     # 1. 定义一个空字典，用于存放每个类别及其计数
+    # 1. 定义一个空字典，用于存放每个类别及其计数
     class_count={}
     # 2. 遍历类别列表，对每个类别进行计数
     for vote in class_list:
@@ -160,7 +160,7 @@ def majority_cnt(class_list):
     # operator.itemgetter(1) 表示按照元组中第2个元素（计数）排序
     # dict.items() => [('yes',3), ('no',2)]
     # 按出现次数排序
-     # 降序排列
+    # 降序排列
     sorted_class_count=sorted(class_count.items(),key=operator.itemgetter(1),reverse=True)
     return sorted_class_count
 
@@ -176,12 +176,12 @@ def creat_tree(dataset,labels):
         return majority_cnt(class_list)
     # 选择“最优划分特征”的下标
     best_feat=choose_best_feature_split(dataset)
-     # 取出该特征对应的名称（可读性用）
+    # 取出该特征对应的名称（可读性用）
     best_feat_label=labels[best_feat]
     # 构建当前节点
     my_tree={best_feat_label:{}}
     del(labels[best_feat])
-     # 取出该特征在所有样本上的取值列表
+    # 取出该特征在所有样本上的取值列表
     feat_values=[example[best_feat] for example in dataset]
     # 去重：该特征有哪些不同的取值
     unique_vals=set(feat_values)
@@ -219,7 +219,7 @@ arrow_args=dict(arrowstyle="<-")
 # #center_pt：节点中心位置（子节点的位置）。
 # #parent_pt：父节点位置，用于绘制箭头的起点。
 # #node_type：节点样式（decision_node 或 leaf_node）。
-# def plot_node(node_txt,center_pt,parent_pt,node_type): 
+# def plot_node(node_txt,center_pt,parent_pt,node_type):
 #     #annotate()：用于在图中添加带箭头的注释（文字+箭头）。
 #     #xy=parent_pt：箭头起点（父节点位置）。
 #     #xytext=center_pt：箭头终点+文字显示位置（子节点位置）。
@@ -230,7 +230,58 @@ arrow_args=dict(arrowstyle="<-")
 #     create_plot.ax1.annotate(node_txt,xy=parent_pt,xycoords='axes fraction',
 #                              xytext=center_pt,textcoords='axes fraction',
 #                              va='center',ha='center',bbox=node_type,arrowprops=arrow_args)
+
+def classify(input_tree, feat_labels, test_vec):
+    """
+    使用决策树进行分类预测
     
+    参数：
+        input_tree: 训练好的决策树
+        feat_labels: 特征标签列表
+        test_vec: 测试样本的特征向量
+    
+    返回：
+        class_label: 预测的类别标签
+    """
+    # 获取决策树的第一个特征（根节点）
+    first_str = list(input_tree.keys())[0]
+    # 获取该特征对应的子树
+    second_dict = input_tree[first_str]
+    # 找到该特征在特征标签列表中的索引位置
+    feat_index = feat_labels.index(first_str)
+    
+    # 遍历该特征的所有可能取值
+    for key in second_dict.keys():
+        # 如果测试样本在该特征上的值等于当前键值
+        if test_vec[feat_index] == key:
+            # 如果对应的值仍然是字典（表示还有子树），则递归分类
+            if type(second_dict[key]).__name__ == 'dict':
+                class_label = classify(second_dict[key], feat_labels, test_vec)
+            else:
+                # 如果是叶节点，直接返回类别标签
+                class_label = second_dict[key]
+            return class_label
+    
+    # 如果没有找到匹配的路径，返回一个默认值（如出现次数最多的类别）
+    return None
+
+def calculate_accuracy(tree, dataset, labels):
+    """
+    计算训练集准确率
+    """
+    correct = 0
+    total = len(dataset)
+
+    for data in dataset:
+        true_label = data[-1]
+        features = data[:-1]
+        predicted_label = classify(tree, labels, features)
+
+        if predicted_label == true_label:
+            correct += 1
+
+    accuracy = correct / total * 100
+    return accuracy
 
 def plot_node(ax, node_txt, center_pt, parent_pt, node_type):
     ax.annotate(node_txt,
@@ -239,7 +290,7 @@ def plot_node(ax, node_txt, center_pt, parent_pt, node_type):
                 va="center", ha="center",
                 bbox=node_type, arrowprops=arrow_args,
                 fontsize=11, color='black')
-    
+
 def create_plot():
     fig=plt.figure(1,facecolor='white')  ## 新建一张图，背景白色
     fig.clf()                             # 清空之前的内容（防止重叠）
@@ -320,28 +371,47 @@ def create_plot(my_tree):
     plt.tight_layout()
     plt.show()
 
-# ========== 运行：建树 + 绘图 ==========
-# 示例数据集：天气与打球 (Play Tennis)
-weather_data = [
-    ['Sunny', 'Hot', 'High', False, 'No'],
-    ['Sunny', 'Hot', 'High', True, 'No'],
-    ['Overcast', 'Hot', 'High', False, 'Yes'],
-    ['Rain', 'Mild', 'High', False, 'Yes'],
-    ['Rain', 'Cool', 'Normal', False, 'Yes'],
-    ['Rain', 'Cool', 'Normal', True, 'No'],
-    ['Overcast', 'Cool', 'Normal', True, 'Yes'],
-    ['Sunny', 'Mild', 'High', False, 'No'],
-    ['Sunny', 'Cool', 'Normal', False, 'Yes'],
-    ['Rain', 'Mild', 'Normal', False, 'Yes'],
-    ['Sunny', 'Mild', 'Normal', True, 'Yes'],
-    ['Overcast', 'Mild', 'High', True, 'Yes'],
-    ['Overcast', 'Hot', 'Normal', False, 'Yes'],
-    ['Rain', 'Mild', 'High', True, 'No']
-]
 
-# 特征标签
-labels = ['Outlook', 'Temperature', 'Humidity', 'Windy']
+def load_lenses_data(file_path):
+    """
+    读取lenses.txt文件
+    """
+    dataset = []
+    with open(file_path, 'r', encoding='utf-8') as f:
+        for line in f:
+            items = line.strip().split('\t')
+            dataset.append(items)
+    return dataset
 
-# 生成决策树
-tree = creat_tree(weather_data, labels[:])  # 注意传入拷贝 labels[:]
-create_plot(tree)
+def main():
+    """
+    主函数：使用lenses数据集
+    """
+    # 加载数据
+    file_path = r'D:\学习\机器学习\tree\lenses.txt'
+    lenses_data = load_lenses_data(file_path)
+
+    # 特征标签
+    lenses_labels = ['年龄', '屈光', '散光', '泪液分泌']
+
+    print("数据集大小:", len(lenses_data))
+    print("前5条数据:")
+    for i in range(min(5, len(lenses_data))):
+        print(lenses_data[i])
+
+    # 生成决策树
+    print("\n正在生成决策树...")
+    tree = creat_tree(lenses_data, lenses_labels[:])
+    print("决策树结构:", tree)
+
+    # 计算训练集准确率
+    accuracy = calculate_accuracy(tree, lenses_data, lenses_labels)
+    print(f"\n训练集准确率: {accuracy:.2f}%")
+
+    # 绘制决策树
+    print("正在绘制决策树...")
+    create_plot(tree)
+
+
+if __name__ == "__main__":
+    main()
