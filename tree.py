@@ -195,6 +195,58 @@ def creat_tree(dataset,labels):
 # my_data,labels=create_dataSet()
 # my_tree=creat_tree(my_data,labels)
 
+def classify(input_tree, feat_labels, test_vec):
+    """
+    使用决策树进行分类
+    
+    参数：
+        input_tree: 训练好的决策树
+        feat_labels: 特征标签列表
+        test_vec: 测试样本的特征向量
+    
+    返回：
+        分类结果
+    """
+    first_str = next(iter(input_tree))
+    second_dict = input_tree[first_str]
+    feat_index = feat_labels.index(first_str)
+    
+    for key in second_dict.keys():
+        if test_vec[feat_index] == key:
+            if type(second_dict[key]).__name__ == 'dict':
+                class_label = classify(second_dict[key], feat_labels, test_vec)
+            else:
+                class_label = second_dict[key]
+            return class_label
+    
+    # 如果测试样本的特征值不在训练树的范围内，返回None
+    return None
+
+def calculate_accuracy(tree, dataset, labels):
+    """
+    计算决策树在训练集上的准确率
+    
+    参数：
+        tree: 训练好的决策树
+        dataset: 训练数据集
+        labels: 特征标签列表
+    
+    返回：
+        accuracy: 准确率（0-1之间的浮点数）
+    """
+    correct_count = 0
+    total_count = len(dataset)
+    
+    for i in range(total_count):
+        test_vec = dataset[i][:-1]  # 去掉标签
+        true_label = dataset[i][-1]  # 真实标签
+        predicted_label = classify(tree, labels, test_vec)
+        
+        if predicted_label == true_label:
+            correct_count += 1
+    
+    accuracy = correct_count / total_count
+    return accuracy
 
 # 支持中文
 matplotlib.rcParams['font.sans-serif'] = ['SimHei']
@@ -322,26 +374,43 @@ def create_plot(my_tree):
 
 # ========== 运行：建树 + 绘图 ==========
 # 示例数据集：天气与打球 (Play Tennis)
-weather_data = [
-    ['Sunny', 'Hot', 'High', False, 'No'],
-    ['Sunny', 'Hot', 'High', True, 'No'],
-    ['Overcast', 'Hot', 'High', False, 'Yes'],
-    ['Rain', 'Mild', 'High', False, 'Yes'],
-    ['Rain', 'Cool', 'Normal', False, 'Yes'],
-    ['Rain', 'Cool', 'Normal', True, 'No'],
-    ['Overcast', 'Cool', 'Normal', True, 'Yes'],
-    ['Sunny', 'Mild', 'High', False, 'No'],
-    ['Sunny', 'Cool', 'Normal', False, 'Yes'],
-    ['Rain', 'Mild', 'Normal', False, 'Yes'],
-    ['Sunny', 'Mild', 'Normal', True, 'Yes'],
-    ['Overcast', 'Mild', 'High', True, 'Yes'],
-    ['Overcast', 'Hot', 'Normal', False, 'Yes'],
-    ['Rain', 'Mild', 'High', True, 'No']
-]
+#weather_data = [
+#    ['Sunny', 'Hot', 'High', False, 'No'],
+#    ['Sunny', 'Hot', 'High', True, 'No'],
+#    ['Overcast', 'Hot', 'High', False, 'Yes'],
+#    ['Rain', 'Mild', 'High', False, 'Yes'],
+#    ['Rain', 'Cool', 'Normal', False, 'Yes'],
+#    ['Rain', 'Cool', 'Normal', True, 'No'],
+#    ['Overcast', 'Cool', 'Normal', True, 'Yes'],
+#    ['Sunny', 'Mild', 'High', False, 'No'],
+#    ['Sunny', 'Cool', 'Normal', False, 'Yes'],
+#    ['Rain', 'Mild', 'Normal', False, 'Yes'],
+#    ['Sunny', 'Mild', 'Normal', True, 'Yes'],
+#    ['Overcast', 'Mild', 'High', True, 'Yes'],
+#    ['Overcast', 'Hot', 'Normal', False, 'Yes'],
+#    ['Rain', 'Mild', 'High', True, 'No']
+#]
 
 # 特征标签
-labels = ['Outlook', 'Temperature', 'Humidity', 'Windy']
+#labels = ['Outlook', 'Temperature', 'Humidity', 'Windy']
 
 # 生成决策树
-tree = creat_tree(weather_data, labels[:])  # 注意传入拷贝 labels[:]
+#tree = creat_tree(weather_data, labels[:])  # 注意传入拷贝 labels[:]
+#create_plot(tree)
+
+lenspath = (r'D:\ppp\tree\lenses.txt')
+
+def load_data(filepath):
+    data=[]
+    fr = open(filepath)
+    for line in fr:
+        line = line.strip().split()
+        data.append(line)
+        
+    return data 
+labels_lenses = ['年龄','屈光','散光','泪液分泌']
+dataset = load_data(lenspath)
+tree = creat_tree(dataset, labels_lenses[:])
+accuracy = calculate_accuracy(tree, dataset, labels_lenses)
+print(f"训练集准确率: {accuracy*100:.2f}%")
 create_plot(tree)
