@@ -40,7 +40,7 @@ def create_dataSet():
     熵接近 0,类别越集中，数据集越“纯”或“确定性越强”
     """
     dataset = [[1, 1, 'yes'],
-               [1.1, 'yes'],
+               [1,1, 'yes'],
                [1, 0, 'no'],
                [0, 1, 'no'],
                [0, 1, 'no']]
@@ -107,7 +107,7 @@ def choose_best_feature_split(dataset):
     base_entropy = cal_shannon_ent(dataset)
     # 3. 初始化“最大信息增益”和“最佳特征”
     best_info_gain = 0.0
-    best_feature = 1
+    best_feature = -1
     # 4. 遍历每一个特征，计算它的信息增益
     for i in range(num_features):
         # 4.1 提取出该特征所有样本的取值列表
@@ -162,7 +162,7 @@ def majority_cnt(class_list):
     # 按出现次数排序
      # 降序排列
     sorted_class_count=sorted(class_count.items(),key=operator.itemgetter(1),reverse=True)
-    return sorted_class_count
+    return sorted_class_count[0][0]
 
 def creat_tree(dataset,labels):
     # 取出数据集中每条样本的“标签列”（通常是最后一列）
@@ -320,6 +320,47 @@ def create_plot(my_tree):
     plt.tight_layout()
     plt.show()
 
+#预测
+def classify(input_tree,feature_labels,test_vec):
+    root = next(iter(input_tree))
+    child_dict = input_tree[root]
+    feat_index = feature_labels.index(root)
+    feat_value = test_vec[feat_index]
+    if feat_value not in child_dict:
+        return "unknown"
+    branch = child_dict[feat_value]
+    if isinstance(branch,dict):
+        return classify(branch,feature_labels,test_vec)
+    else:
+        return branch
+
+#计算准确率
+def calculate_accuracy(lenses_tree, lenses_data, lenses_labels):
+    correct = 0
+    X_labels = ['age','prescription', 'astigmatic', 'tear_rate']
+    for row in lenses_data:
+        x,y = row[:-1],row[-1]
+        yhat = classify(lenses_tree,X_labels,x)
+        correct +=(yhat==y)
+    
+    accuracy = correct / len(lenses_data)
+    return accuracy
+#演示预测功能 - 对新样本进行预测
+def demo_prediction(tree, feature_labels):
+   
+    print("\n=== 演示预测 ===")
+    
+    # 示例测试数据
+    test_cases = [
+        ['young', 'myope', 'no', 'reduced'],
+        ['pre', 'hyper', 'yes', 'normal'],
+        ['young', 'hyper', 'yes', 'normal']
+    ]
+    
+    for i, test_case in enumerate(test_cases, 1):
+        prediction = classify(tree, feature_labels, test_case)
+        print(f"测试样本 {i}: {test_case} -> 预测: {prediction}")
+
 # ========== 运行：建树 + 绘图 ==========
 # 示例数据集：天气与打球 (Play Tennis)
 weather_data = [
@@ -340,8 +381,34 @@ weather_data = [
 ]
 
 # 特征标签
-labels = ['Outlook', 'Temperature', 'Humidity', 'Windy']
+#labels = ['Outlook', 'Temperature', 'Humidity', 'Windy']
 
 # 生成决策树
-tree = creat_tree(weather_data, labels[:])  # 注意传入拷贝 labels[:]
-create_plot(tree)
+#tree = creat_tree(weather_data, labels[:])  # 注意传入拷贝 labels[:]
+#create_plot(tree)
+
+def load_lenses(path):
+    data = []
+    with open(path,'r',encoding='utf-8') as f:
+        for line in f:
+            parts = line.strip().split('\t')
+            data.append(parts)
+    return data
+
+def main():
+    lenses_data = load_lenses(r'C:\Users\l\Desktop\gi\tree\tree\lenses.txt')
+
+    lenses_labels = ['age','prescription', 'astigmatic', 'tear_rate']
+
+    lenses_tree = creat_tree(lenses_data, lenses_labels[:])
+    create_plot(lenses_tree)
+
+    accuracy=calculate_accuracy(lenses_tree, lenses_data, lenses_labels)
+    print(f"在训练集上的准确率：{accuracy:.2%}")
+
+    # 演示预测
+    demo_prediction(lenses_tree, lenses_labels)
+
+
+if __name__ == "__main__":
+    main()
