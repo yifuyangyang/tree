@@ -34,22 +34,22 @@ def cal_shannon_ent(dataset):
     return shannon_ent
 
 
-def create_dataSet():
-    """
-    熵接近 1，说明“yes”和“no”两个类别的比例比较接近，数据集的不确定性较高。
-    熵接近 0,类别越集中，数据集越“纯”或“确定性越强”
-    """
-    dataset = [[1, 1, 'yes'],
-               [1.1, 'yes'],
-               [1, 0, 'no'],
-               [0, 1, 'no'],
-               [0, 1, 'no']]
-    labels = ['no suerfacing', 'flippers']
-    return dataset, labels
+# def create_dataSet():
+#     """
+#     熵接近 1，说明“yes”和“no”两个类别的比例比较接近，数据集的不确定性较高。
+#     熵接近 0,类别越集中，数据集越“纯”或“确定性越强”
+#     """
+#     dataset = [[1, 1, 'yes'],
+#                [1.1, 'yes'],
+#                [1, 0, 'no'],
+#                [0, 1, 'no'],
+#                [0, 1, 'no']]
+#     labels = ['no suerfacing', 'flippers']
+#     return dataset, labels
 
 
-dataset, labels = create_dataSet()
-print(cal_shannon_ent(dataset))
+# dataset, labels = create_dataSet()
+# print(cal_shannon_ent(dataset))
 
 
 def split_dataset(dataset, axis, value):
@@ -81,15 +81,15 @@ def split_dataset(dataset, axis, value):
 
 
 # 示例数据集：最后一列是标签
-dataset_test = [
-    [1, 'sunny', 'yes'],
-    [1, 'rainy', 'no'],
-    [0, 'sunny', 'yes']
-]
+# dataset_test = [
+#     [1, 'sunny', 'yes'],
+#     [1, 'rainy', 'no'],
+#     [0, 'sunny', 'yes']
+# ]
 
 # 按第0列的值为1来划分
-result = split_dataset(dataset_test, 0, 1)
-print(result)
+# result = split_dataset(dataset_test, 0, 1)
+# print(result)
 
 
 def choose_best_feature_split(dataset):
