@@ -194,7 +194,68 @@ def creat_tree(dataset,labels):
 
 # my_data,labels=create_dataSet()
 # my_tree=creat_tree(my_data,labels)
-
+def calculate_accuracy(tree, dataset, labels):
+    """
+    计算决策树在训练集上的准确率
+    
+    参数：
+        tree: 训练好的决策树
+        dataset: 训练数据集
+        labels: 特征标签列表
+    
+    返回：
+        accuracy: 准确率（0-1之间的浮点数）
+    """
+    correct = 0
+    total = len(dataset)
+    
+    for data in dataset:
+        # 提取特征向量（去掉标签）
+        features = data[:-1]
+        true_label = data[-1]
+        
+        # 使用决策树进行预测
+        predicted_label = classify(tree, labels[:], features)
+        
+        # 比较预测结果和真实标签
+        if predicted_label == true_label:
+            correct += 1
+    
+    accuracy = correct / total
+    return accuracy
+def classify(input_tree, feat_labels, test_vec):
+    """
+    使用决策树进行分类预测
+    
+    参数：
+        input_tree: 训练好的决策树
+        feat_labels: 特征标签列表
+        test_vec: 测试样本的特征向量
+    
+    返回：
+        class_label: 预测的类别标签
+    """
+    # 获取决策树的第一个特征（根节点）
+    first_str = list(input_tree.keys())[0]
+    # 获取该特征对应的子树
+    second_dict = input_tree[first_str]
+    # 找到该特征在特征标签列表中的索引位置
+    feat_index = feat_labels.index(first_str)
+    
+    # 遍历该特征的所有可能取值
+    for key in second_dict.keys():
+        # 如果测试样本在该特征上的值等于当前键值
+        if test_vec[feat_index] == key:
+            # 如果对应的值仍然是字典（表示还有子树），则递归分类
+            if type(second_dict[key]).__name__ == 'dict':
+                class_label = classify(second_dict[key], feat_labels, test_vec)
+            else:
+                # 如果是叶节点，直接返回类别标签
+                class_label = second_dict[key]
+            return class_label
+    
+    # 如果没有找到匹配的路径，返回一个默认值（如出现次数最多的类别）
+    return None
 
 # 支持中文
 matplotlib.rcParams['font.sans-serif'] = ['SimHei']
@@ -350,10 +411,15 @@ def load_data(filepath):
     data=[]
     fr=open(filepath)
     for line in fr:
-        line=line.strip().split()
+        line=line.strip().split('\t')
         data.append(line)
     return data
 labels_lenses=['年龄','屈光','散光','泪液分泌']
 dataset=load_data(lenspath)
 tree=creat_tree(dataset,labels_lenses[:])
 create_plot(tree)
+
+# 计算训练集准确率
+accuracy = calculate_accuracy(tree, dataset, labels_lenses)
+print(f"训练集准确率: {accuracy*100:.2f}%")
+
