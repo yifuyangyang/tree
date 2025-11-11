@@ -4,12 +4,9 @@ import matplotlib.pyplot as plt
 import matplotlib
 
 def cal_shannon_ent(dataset):
-    """
-    计算熵
-    """
-    # 1. 计算数据集中样本的总数
+
     num_entries = len(dataset)
-    # 2. 创建一个字典，用于统计每个类别标签出现的次数
+
     labels_counts = {}
     # 3. 遍历数据集中的每条记录
     for feat_vec in dataset:
