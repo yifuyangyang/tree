@@ -322,26 +322,203 @@ def create_plot(my_tree):
 
 # ========== 运行：建树 + 绘图 ==========
 # 示例数据集：天气与打球 (Play Tennis)
-weather_data = [
-    ['Sunny', 'Hot', 'High', False, 'No'],
-    ['Sunny', 'Hot', 'High', True, 'No'],
-    ['Overcast', 'Hot', 'High', False, 'Yes'],
-    ['Rain', 'Mild', 'High', False, 'Yes'],
-    ['Rain', 'Cool', 'Normal', False, 'Yes'],
-    ['Rain', 'Cool', 'Normal', True, 'No'],
-    ['Overcast', 'Cool', 'Normal', True, 'Yes'],
-    ['Sunny', 'Mild', 'High', False, 'No'],
-    ['Sunny', 'Cool', 'Normal', False, 'Yes'],
-    ['Rain', 'Mild', 'Normal', False, 'Yes'],
-    ['Sunny', 'Mild', 'Normal', True, 'Yes'],
-    ['Overcast', 'Mild', 'High', True, 'Yes'],
-    ['Overcast', 'Hot', 'Normal', False, 'Yes'],
-    ['Rain', 'Mild', 'High', True, 'No']
-]
+# weather_data = [
+#     ['Sunny', 'Hot', 'High', False, 'No'],
+#     ['Sunny', 'Hot', 'High', True, 'No'],
+#     ['Overcast', 'Hot', 'High', False, 'Yes'],
+#     ['Rain', 'Mild', 'High', False, 'Yes'],
+#     ['Rain', 'Cool', 'Normal', False, 'Yes'],
+#     ['Rain', 'Cool', 'Normal', True, 'No'],
+#     ['Overcast', 'Cool', 'Normal', True, 'Yes'],
+#     ['Sunny', 'Mild', 'High', False, 'No'],
+#     ['Sunny', 'Cool', 'Normal', False, 'Yes'],
+#     ['Rain', 'Mild', 'Normal', False, 'Yes'],
+#     ['Sunny', 'Mild', 'Normal', True, 'Yes'],
+#     ['Overcast', 'Mild', 'High', True, 'Yes'],
+#     ['Overcast', 'Hot', 'Normal', False, 'Yes'],
+#     ['Rain', 'Mild', 'High', True, 'No']
+# ]
 
-# 特征标签
-labels = ['Outlook', 'Temperature', 'Humidity', 'Windy']
+# # 特征标签
+# labels = ['Outlook', 'Temperature', 'Humidity', 'Windy']
 
-# 生成决策树
-tree = creat_tree(weather_data, labels[:])  # 注意传入拷贝 labels[:]
+# # 生成决策树
+#tree = creat_tree(weather_data, labels[:])  # 注意传入拷贝 labels[:]
+#create_plot(tree)
+lenspath=(r'D:\github\tree\lenses.txt')
+def load_data(filepath):
+    data=[]
+    fr=open(filepath)
+    for line in fr:
+        line=line.strip().split('\t')
+        data.append(line)
+    return data
+labels=['年龄','屈光','散光','泪液分泌']
+dataset = load_data(lenspath)
+tree = creat_tree(dataset, labels[:])
 create_plot(tree)
+
+
+def classify(inputTree, featLabels, testVec):
+    """
+    使用决策树进行分类
+    """
+    # 获取决策树的第一个键（根节点特征）
+    firstStr = list(inputTree.keys())[0]
+    # 获取子节点
+    secondDict = inputTree[firstStr]
+    # 查找特征在标签列表中的索引位置
+    featIndex = featLabels.index(firstStr)
+    
+    # 遍历子节点
+    for key in secondDict.keys():
+        # 如果测试数据的特征值等于当前节点的键值
+        if testVec[featIndex] == key:
+            # 如果子节点仍然是字典（非叶子节点），递归调用
+            if type(secondDict[key]).__name__ == 'dict':
+                classLabel = classify(secondDict[key], featLabels, testVec)
+            else: 
+                # 到达叶子节点，返回分类结果
+                classLabel = secondDict[key]
+            return classLabel
+    
+    # 如果没有匹配的路径，返回默认值
+    return "未知分类"
+
+def single_case_test():
+    """
+    单病例测试功能
+    """
+    print("\n" + "="*50)
+    print("决策树分类测试界面")
+    print("="*50)
+    print("请输入患者信息（格式：年龄 屈光 散光 泪液分泌）")
+    print("例如" \
+    "")
+    print("输入 'quit' 或 '退出' 可以结束程序")
+    print("-"*50)
+    
+    while True:
+        try:
+            print("\n请输入患者数据：")
+            user_input = input("> ").strip()
+            
+            if user_input.lower() in ['quit', '退出', 'exit', 'q']:
+                print("程序结束，再见！")
+                break
+                
+            if not user_input:
+                continue
+                
+            # 分割输入数据
+            input_data = user_input.split()
+            
+            # 检查数据格式
+            if len(input_data) != 4:
+                print("错误：请输入4个特征值，用空格分隔")
+                print("格式：年龄 屈光 散光 泪液分泌")
+                print("例如：young myope no normal")
+                continue
+            
+            # 提取特征值
+            age, prescription, astigmatic, tear_rate = input_data
+            
+            # 验证特征值格式
+            valid_ages = ['young', 'pre', 'presbyopic']
+            valid_prescriptions = ['myope', 'hyper']
+            valid_astigmatic = ['no', 'yes']
+            valid_tear_rates = ['reduced', 'normal']
+            
+            if age not in valid_ages:
+                print(f"错误：年龄必须是 {valid_ages} 中的一个")
+                continue
+            if prescription not in valid_prescriptions:
+                print(f"错误：屈光必须是 {valid_prescriptions} 中的一个")
+                continue
+            if astigmatic not in valid_astigmatic:
+                print(f"错误：散光必须是 {valid_astigmatic} 中的一个")
+                continue
+            if tear_rate not in valid_tear_rates:
+                print(f"错误：泪液分泌必须是 {valid_tear_rates} 中的一个")
+                continue
+            
+            # 构建测试数据
+            test_data = [age, prescription, astigmatic, tear_rate]
+            
+            # 进行分类
+            print("正在分类...")
+            result = classify(tree, labels, test_data)
+            
+            # 显示结果
+            print("\n" + "="*40)
+            print("分类结果")
+            print("="*40)
+            print(f"输入数据: {test_data}")
+            print(f"推荐镜片类型: {result}")
+            
+            # 解释结果
+            if result == "no lenses":
+                print("建议: 不适合佩戴隐形眼镜")
+            elif result == "soft":
+                print("建议: 推荐软性隐形眼镜")
+            elif result == "hard":
+                print("建议: 推荐硬性隐形眼镜")
+            else:
+                print("建议: 未知类型，请咨询专业医生")
+            print("="*40)
+            
+        except KeyboardInterrupt:
+            print("\n\n程序被用户中断，再见！")
+            break
+        except Exception as e:
+            print(f"处理错误: {e}")
+            print("请重新输入正确的数据格式")
+
+def calculate_accuracy(tree, feature_labels, dataset):
+    """
+    计算决策树在训练集上的准确率
+    """
+    correct_predictions = 0
+    total_samples = len(dataset)
+    
+    print("\n" + "="*60)
+    print("训练集准确率计算")
+    print("="*60)
+    
+    for i, sample in enumerate(dataset, 1):
+        # 分离特征和真实标签（假设最后一列是标签）
+        features = sample[:-1]  # 前n-1列是特征
+        true_label = sample[-1]  # 最后一列是真实标签
+        
+        # 使用决策树进行预测
+        predicted_label = classify(tree, feature_labels, features)
+        
+        # 检查预测是否正确
+        is_correct = (predicted_label == true_label)
+        if is_correct:
+            correct_predictions += 1
+        
+        # 打印每个样本的预测结果
+        status = "✓" if is_correct else "✗"
+        print(f"样本{i}: {features} -> 预测: {predicted_label:8} | 真实: {true_label:8} {status}")
+    
+    # 计算准确率
+    accuracy = correct_predictions / total_samples * 100
+    
+    print("-"*60)
+    print(f"总计: {total_samples} 个样本")
+    print(f"正确: {correct_predictions} 个")
+    print(f"错误: {total_samples - correct_predictions} 个")
+    print(f"准确率: {accuracy:.2f}%")
+    print("="*60)
+    
+    return accuracy
+
+# 主程序
+if __name__ == "__main__":
+    print("决策树训练完成！")
+    print("特征标签:", labels)
+    accuracy = calculate_accuracy(tree, labels, dataset)
+    print("准确率为：",accuracy)
+    # 开始单病例测试
+    single_case_test()
