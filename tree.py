@@ -417,9 +417,9 @@ def load_data(filepath):
 labels_lenses=['年龄','屈光','散光','泪液分泌']
 dataset=load_data(lenspath)
 tree=creat_tree(dataset,labels_lenses[:])
-create_plot(tree)
-
 # 计算训练集准确率
 accuracy = calculate_accuracy(tree, dataset, labels_lenses)
 print(f"训练集准确率: {accuracy*100:.2f}%")
+create_plot(tree)
+
 
