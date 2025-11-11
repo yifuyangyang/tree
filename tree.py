@@ -2,6 +2,8 @@ from math import log
 import operator
 import matplotlib.pyplot as plt
 import matplotlib
+import matplotlib.pyplot as plt 
+import matplotlib 
 
 def cal_shannon_ent(dataset):
     """
@@ -322,26 +324,93 @@ def create_plot(my_tree):
 
 # ========== 运行：建树 + 绘图 ==========
 # 示例数据集：天气与打球 (Play Tennis)
-weather_data = [
-    ['Sunny', 'Hot', 'High', False, 'No'],
-    ['Sunny', 'Hot', 'High', True, 'No'],
-    ['Overcast', 'Hot', 'High', False, 'Yes'],
-    ['Rain', 'Mild', 'High', False, 'Yes'],
-    ['Rain', 'Cool', 'Normal', False, 'Yes'],
-    ['Rain', 'Cool', 'Normal', True, 'No'],
-    ['Overcast', 'Cool', 'Normal', True, 'Yes'],
-    ['Sunny', 'Mild', 'High', False, 'No'],
-    ['Sunny', 'Cool', 'Normal', False, 'Yes'],
-    ['Rain', 'Mild', 'Normal', False, 'Yes'],
-    ['Sunny', 'Mild', 'Normal', True, 'Yes'],
-    ['Overcast', 'Mild', 'High', True, 'Yes'],
-    ['Overcast', 'Hot', 'Normal', False, 'Yes'],
-    ['Rain', 'Mild', 'High', True, 'No']
-]
+#weather_data = [
+#    ['Sunny', 'Hot', 'High', False, 'No'],
+#    ['Sunny', 'Hot', 'High', True, 'No'],
+#    ['Overcast', 'Hot', 'High', False, 'Yes'],
+#    ['Rain', 'Mild', 'High', False, 'Yes'],
+#    ['Rain', 'Cool', 'Normal', False, 'Yes'],
+#    ['Rain', 'Cool', 'Normal', True, 'No'],
+#    ['Overcast', 'Cool', 'Normal', True, 'Yes'],
+#    ['Sunny', 'Mild', 'High', False, 'No'],
+#    ['Sunny', 'Cool', 'Normal', False, 'Yes'],
+#    ['Rain', 'Mild', 'Normal', False, 'Yes'],
+#    ['Sunny', 'Mild', 'Normal', True, 'Yes'],
+#    ['Overcast', 'Mild', 'High', True, 'Yes'],
+#    ['Overcast', 'Hot', 'Normal', False, 'Yes'],
+#    ['Rain', 'Mild', 'High', True, 'No']
+#]
 
 # 特征标签
-labels = ['Outlook', 'Temperature', 'Humidity', 'Windy']
+#labels = ['Outlook', 'Temperature', 'Humidity', 'Windy']
 
 # 生成决策树
-tree = creat_tree(weather_data, labels[:])  # 注意传入拷贝 labels[:]
+#tree = creat_tree(weather_data, labels[:])  # 注意传入拷贝 labels[:]
+def calc_accuracy(test_dataset, labels, tree):
+    """
+    计算决策树在测试集上的准确率
+    """
+    correct_count = 0
+    total_count = len(test_dataset)
+    
+    for data in test_dataset:
+        # 真实标签是最后一个元素
+        true_label = data[-1]
+        # 特征值
+        features = data[:-1]
+        # 使用决策树进行预测
+        predicted_label = classify(features, tree, labels)
+        
+        if predicted_label == true_label:
+            correct_count += 1
+    
+    accuracy = correct_count / total_count
+    return accuracy
+
+def classify(features, tree, labels):
+    """
+    使用决策树对单个样本进行分类
+    """
+    first_str = list(tree.keys())[0]
+    second_dict = tree[first_str]
+    feature_index = labels.index(first_str)
+    
+    for key in second_dict.keys():
+        if features[feature_index] == key:
+            if type(second_dict[key]).__name__ == 'dict':
+                # 如果还是字典，继续递归
+                return classify(features, second_dict[key], labels)
+            else:
+                # 到达叶节点，返回分类结果
+                return second_dict[key]
+
+lenspath = (r'C:\Users\Leah\Desktop\tree\lenses.txt')
+
+def load_data(filepath):
+    data=[]
+    fr=open(filepath)
+    for line in fr:
+        line=line.strip().split('\t')
+        data.append(line)
+    return data
+labels=['年龄','屈光','散光','泪液分泌']
+dataset=load_data(lenspath)
+
+split_ratio = 0.7  # 70%训练，30%测试
+split_index = int(len(dataset) * split_ratio)
+
+train_dataset = dataset[:split_index]
+test_dataset = dataset[split_index:]
+
+# 构建决策树
+tree = creat_tree(train_dataset, labels[:])  # 注意：creat_tree 应该是 create_tree
+
+# 计算准确率
+accuracy = calc_accuracy(test_dataset, labels, tree)
+
+print(f"决策树在测试集上的准确率: {accuracy:.4f}")
+print(f"准确率百分比: {accuracy * 100:.2f}%")
+
+tree = creat_tree(dataset,labels[:])
 create_plot(tree)
+
