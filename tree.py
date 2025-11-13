@@ -322,26 +322,70 @@ def create_plot(my_tree):
 
 # ========== 运行：建树 + 绘图 ==========
 # 示例数据集：天气与打球 (Play Tennis)
-weather_data = [
-    ['Sunny', 'Hot', 'High', False, 'No'],
-    ['Sunny', 'Hot', 'High', True, 'No'],
-    ['Overcast', 'Hot', 'High', False, 'Yes'],
-    ['Rain', 'Mild', 'High', False, 'Yes'],
-    ['Rain', 'Cool', 'Normal', False, 'Yes'],
-    ['Rain', 'Cool', 'Normal', True, 'No'],
-    ['Overcast', 'Cool', 'Normal', True, 'Yes'],
-    ['Sunny', 'Mild', 'High', False, 'No'],
-    ['Sunny', 'Cool', 'Normal', False, 'Yes'],
-    ['Rain', 'Mild', 'Normal', False, 'Yes'],
-    ['Sunny', 'Mild', 'Normal', True, 'Yes'],
-    ['Overcast', 'Mild', 'High', True, 'Yes'],
-    ['Overcast', 'Hot', 'Normal', False, 'Yes'],
-    ['Rain', 'Mild', 'High', True, 'No']
-]
+# weather_data = [
+#     ['Sunny', 'Hot', 'High', False, 'No'],
+#     ['Sunny', 'Hot', 'High', True, 'No'],
+#     ['Overcast', 'Hot', 'High', False, 'Yes'],
+#     ['Rain', 'Mild', 'High', False, 'Yes'],
+#     ['Rain', 'Cool', 'Normal', False, 'Yes'],
+#     ['Rain', 'Cool', 'Normal', True, 'No'],
+#     ['Overcast', 'Cool', 'Normal', True, 'Yes'],
+#     ['Sunny', 'Mild', 'High', False, 'No'],
+#     ['Sunny', 'Cool', 'Normal', False, 'Yes'],
+#     ['Rain', 'Mild', 'Normal', False, 'Yes'],
+#     ['Sunny', 'Mild', 'Normal', True, 'Yes'],
+#     ['Overcast', 'Mild', 'High', True, 'Yes'],
+#     ['Overcast', 'Hot', 'Normal', False, 'Yes'],
+#     ['Rain', 'Mild', 'High', True, 'No']
+# ]
 
-# 特征标签
-labels = ['Outlook', 'Temperature', 'Humidity', 'Windy']
+# # 特征标签
+# labels = ['Outlook', 'Temperature', 'Humidity', 'Windy']
 
-# 生成决策树
-tree = creat_tree(weather_data, labels[:])  # 注意传入拷贝 labels[:]
+# # 生成决策树
+# tree = creat_tree(weather_data, labels[:])  # 注意传入拷贝 labels[:]
+# create_plot(tree)
+lenspath = (r'C:\Users\张杨锦成\Desktop\tree.xj\tree\lenses.txt')
+
+def load_data(filepath):
+    data = []
+    fr = open(filepath)
+    for line in fr:
+        line = line.strip().split('\t')
+        data.append(line)
+    return data
+
+labels_lenses = ['年龄','屈光','散光','泪液分泌']
+dataset = load_data(lenspath)
+tree = creat_tree(dataset,labels_lenses[:])
 create_plot(tree)
+
+def classify(input_tree, feat_labels, test_vec):
+    first_str = next(iter(input_tree))
+    second_dict = input_tree[first_str]
+    feat_index = feat_labels.index(first_str)
+    for key in second_dict.keys():
+        if test_vec[feat_index] == key:
+            if isinstance(second_dict[key], dict):
+                class_label = classify(second_dict[key], feat_labels, test_vec)
+            else:
+                class_label = second_dict[key]
+            return class_label
+
+def calculate_training_accuracy(input_tree, feat_labels, dataset):
+    correct_count = 0 
+    total_count = len(dataset) 
+    for sample in dataset:
+        test_vec = sample[:-1]
+        true_label = sample[-1]
+        pred_label = classify(input_tree, feat_labels, test_vec)
+        if pred_label == true_label:
+            correct_count += 1
+    accuracy = round(correct_count / total_count, 4)
+    return accuracy
+
+training_accuracy = calculate_training_accuracy(tree, labels_lenses, dataset)
+    
+print("训练集总样本数：", len(dataset))
+print("决策树在训练集上的准确率：", training_accuracy)
+print("准确率百分比：", training_accuracy * 100, "%")
