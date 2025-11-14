@@ -40,7 +40,7 @@ def create_dataSet():
     熵接近 0,类别越集中，数据集越“纯”或“确定性越强”
     """
     dataset = [[1, 1, 'yes'],
-               [1.1, 'yes'],
+               [1,1, 'yes'],
                [1, 0, 'no'],
                [0, 1, 'no'],
                [0, 1, 'no']]
@@ -107,7 +107,7 @@ def choose_best_feature_split(dataset):
     base_entropy = cal_shannon_ent(dataset)
     # 3. 初始化“最大信息增益”和“最佳特征”
     best_info_gain = 0.0
-    best_feature = 1
+    best_feature = 0
     # 4. 遍历每一个特征，计算它的信息增益
     for i in range(num_features):
         # 4.1 提取出该特征所有样本的取值列表
@@ -162,33 +162,31 @@ def majority_cnt(class_list):
     # 按出现次数排序
      # 降序排列
     sorted_class_count=sorted(class_count.items(),key=operator.itemgetter(1),reverse=True)
-    return sorted_class_count
+    return sorted_class_count[0][0]
+
 
 def creat_tree(dataset,labels):
-    # 取出数据集中每条样本的“标签列”（通常是最后一列）
+    if not labels:
+        return majority_cnt([example[-1] for example in dataset])
     class_list=[example[-1] for example in dataset]
-    # 递归出口①：若所有样本同类，直接返回该类
     if class_list.count(class_list[0])==len(class_list):
         return class_list[0]
-    # 递归出口②：若没有可用特征（只剩标签列），返回多数类
-    # dataset[0] 的长度 = 特征数 + 1（标签列）
     if len(dataset[0])==1:
         return majority_cnt(class_list)
-    # 选择“最优划分特征”的下标
+    
+    #获取最优特征后，强制校验索引范围
     best_feat=choose_best_feature_split(dataset)
-     # 取出该特征对应的名称（可读性用）
+    #确保 best_feat 在 0 ~ len(labels)-1 之间
+    best_feat = min(best_feat, len(labels)-1)  #超出则取最后一个特征索引
+    best_feat = max(best_feat, 0)  #防止出现负数索引
+    
     best_feat_label=labels[best_feat]
-    # 构建当前节点
     my_tree={best_feat_label:{}}
     del(labels[best_feat])
-     # 取出该特征在所有样本上的取值列表
     feat_values=[example[best_feat] for example in dataset]
-    # 去重：该特征有哪些不同的取值
     unique_vals=set(feat_values)
-    # 对该特征的每个取值，分别递归构建子树
     for value in unique_vals:
-        sub_labels=labels[:]   # 拷贝一份标签名列表给子递归使用
-        # 把当前特征=某取值的样本切分出来
+        sub_labels=labels[:]
         my_tree[best_feat_label][value]=creat_tree(split_dataset(dataset,best_feat,value),sub_labels)
     return my_tree
 
@@ -240,7 +238,9 @@ def plot_node(ax, node_txt, center_pt, parent_pt, node_type):
                 bbox=node_type, arrowprops=arrow_args,
                 fontsize=11, color='black')
     
-def create_plot():
+def create_plot(my_tree):
+    fig,ax=plt.subplots(figsize=(10,8))
+    ax.set_axis_off()
     fig=plt.figure(1,facecolor='white')  ## 新建一张图，背景白色
     fig.clf()                             # 清空之前的内容（防止重叠）
     create_plot.ax1=plt.subplot(111,frameon=False) # 创建一个子图，不显示坐标轴边框
@@ -344,4 +344,43 @@ labels = ['Outlook', 'Temperature', 'Humidity', 'Windy']
 
 # 生成决策树
 tree = creat_tree(weather_data, labels[:])  # 注意传入拷贝 labels[:]
-create_plot(tree)
+
+#create_plot(tree)
+
+def classify(input_tree, feat_labels, test_vec):
+    first_str = next(iter(input_tree))  # 获取根节点特征
+    second_dict = input_tree[first_str]  # 根节点下的子树
+    feat_index = feat_labels.index(first_str)  # 找到特征在标签列表中的索引
+    class_label = None  # 初始化预测标签，避免未匹配情况
+    for key in second_dict.keys():
+        if test_vec[feat_index] == key:  # 匹配测试样本的特征值
+            if isinstance(second_dict[key], dict):  # 若为子树，递归预测
+                class_label = classify(second_dict[key], feat_labels, test_vec)
+            else:  # 若为叶节点，直接返回类别
+                class_label = second_dict[key]
+    return class_label
+
+def load_lenses(path):
+    data = []
+    with open(path,'r',encoding='utf-8') as f:
+        for line in f:
+            parts = line.strip().split()
+            if parts:
+                data.append(parts)
+    return data
+
+lenses_data = load_lenses(r'C:\Users\liyan\Desktop\tree\lenses.txt')
+
+lenses_labels = ['age','prescription', 'astigmatic', 'tear_rate']
+
+lenses_tree = creat_tree(lenses_data, lenses_labels[:])
+create_plot(lenses_tree)
+
+correct = 0
+X_labels = ['age','prescription', 'astigmatic', 'tear_rate']
+for row in lenses_data:
+    x,y = row[:-1],row[-1]
+    yhat = classify(lenses_tree,X_labels,x)
+    correct +=(yhat==y)
+    accuracy = correct / len(lenses_data)
+print(f"训练集上的准确率：{correct}/{len(lenses_data)}={accuracy:.2%}")
