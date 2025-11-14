@@ -343,5 +343,58 @@ weather_data = [
 labels = ['Outlook', 'Temperature', 'Humidity', 'Windy']
 
 # 生成决策树
-tree = creat_tree(weather_data, labels[:])  # 注意传入拷贝 labels[:]
-create_plot(tree)
+#tree = creat_tree(weather_data, labels[:])  # 注意传入拷贝 labels[:]
+#create_plot(tree)
+
+def load_lenses_data(filename):
+    """
+    加载隐形眼镜数据集
+    """
+    with open(filename, 'r') as fr:
+        lenses = [inst.strip().split('\t') for inst in fr.readlines()]
+    lenses_labels = ['年龄', '屈光', '散光', '眼泪分泌']
+    return lenses, lenses_labels
+
+def classify(input_tree, feat_labels, test_vec):
+    """
+    使用决策树进行分类
+    """
+    first_str = next(iter(input_tree))
+    second_dict = input_tree[first_str]
+    feat_index = feat_labels.index(first_str)
+    
+    for key in second_dict.keys():
+        if test_vec[feat_index] == key:
+            if isinstance(second_dict[key], dict):
+                class_label = classify(second_dict[key], feat_labels, test_vec)
+            else:
+                class_label = second_dict[key]
+    return class_label
+
+def calc_accuracy(input_tree, feat_labels, data_set):
+    """
+    计算决策树在数据集上的准确率
+    """
+    correct = 0
+    for data in data_set:
+        predict = classify(input_tree, feat_labels, data[:-1])
+        if predict == data[-1]:
+            correct += 1
+    return correct / len(data_set)
+
+# ========== 运行：建树 + 绘图 ==========
+
+# 加载隐形眼镜数据集
+lenses_data, lenses_labels = load_lenses_data('lenses.txt')
+
+# 生成决策树
+lenses_tree = creat_tree(lenses_data, lenses_labels[:])  # 注意传入拷贝 labels[:]
+print("生成的决策树:")
+print(lenses_tree)
+
+# 绘制决策树
+create_plot(lenses_tree)
+
+# 计算训练集准确率
+accuracy = calc_accuracy(lenses_tree, lenses_labels[:], lenses_data)
+print(f"训练集准确率: {accuracy:.2%}")
