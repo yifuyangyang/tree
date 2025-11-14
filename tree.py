@@ -367,7 +367,7 @@ def load_lenses(path):
                 data.append(parts)
     return data
 
-lenses_data = load_lenses(r'C:\Users\l\Desktop\gi\tree\tree\lenses.txt')
+lenses_data = load_lenses(r'C:\Users\E507\Desktop\tree\lenses.txt')
 
 lenses_labels = ['age','prescription', 'astigmatic', 'tear_rate']
 
