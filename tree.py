@@ -1,8 +1,17 @@
-from math import log
-import operator
 import matplotlib.pyplot as plt
 import matplotlib
 
+# ===================== 中文乱码修复（Windows系统）=====================
+import sys
+# 设置标准输出编码为UTF-8（解决控制台中文乱码）
+sys.stdout.reconfigure(encoding='utf-8')
+# 设置matplotlib中文（兼容所有Windows版本）
+plt.rcParams['font.sans-serif'] = ['SimSun', 'Microsoft YaHei', 'SimHei']  # 多字体兼容
+plt.rcParams['axes.unicode_minus'] = False
+matplotlib.rcParams['font.sans-serif'] = ['SimSun', 'Microsoft YaHei', 'SimHei']
+matplotlib.rcParams['axes.unicode_minus'] = False
+
+# ===================== ID3决策树核心函数（保持你原来的实现）=====================
 def cal_shannon_ent(dataset):
     """
     计算熵
@@ -57,17 +66,16 @@ def split_dataset(dataset, axis, value):
     按照指定特征(axis)的某个取值(value)划分数据集。
     会选出所有该特征等于 value 的样本，
     并且返回时会去掉这一列特征。
-
     参数：
         dataset: 原始数据集（二维列表，每一行是一个样本，每一列是一个特征，最后一列通常是标签）
         axis: 要划分的特征列索引（例如 0 表示第 1 个特征）
         value: 特征的目标取值（例如 'sunny'）
-
     返回：
         ret_dataset: 划分后的子数据集（不包含 axis 那一列）
     """
     ret_dataset = []  # 用于存放划分后的子数据集
     # 遍历原始数据集的每一条样本
+    ret_dataset = []
     for feat_vec in dataset:
         # 如果这一条样本在 axis 特征上的值等于给定的 value
         if feat_vec[axis] == value:
@@ -75,6 +83,8 @@ def split_dataset(dataset, axis, value):
             reduced_feat_vec = feat_vec[:axis]    # 取前面部分
             reduced_feat_vec.extend(feat_vec[axis+1:])  # 取后面部分拼接起来
             # 把这个新样本加入到子数据集中
+            reduced_feat_vec = feat_vec[:axis]
+            reduced_feat_vec.extend(feat_vec[axis+1:])
             ret_dataset.append(reduced_feat_vec)
       # 返回划分后的数据集
     return ret_dataset
@@ -95,7 +105,6 @@ print(result)
 def choose_best_feature_split(dataset):
     """
     选择信息增益最大的特征索引，作为本轮划分的最优特征。
-
     参数：
         dataset: 数据集（二维列表，每行一条样本，最后一列是标签）
     返回：
@@ -109,6 +118,7 @@ def choose_best_feature_split(dataset):
     best_info_gain = 0.0
     best_feature = 1
     # 4. 遍历每一个特征，计算它的信息增益
+    best_feature = 0  # 修正初始值（原1可能导致索引异常）
     for i in range(num_features):
         # 4.1 提取出该特征所有样本的取值列表
         feat_list = [example[i] for example in dataset]
@@ -175,6 +185,7 @@ def creat_tree(dataset,labels):
     if len(dataset[0])==1:
         return majority_cnt(class_list)
     # 选择“最优划分特征”的下标
+        return majority_cnt(class_list)[0][0]  # 直接返回多数标签（避免返回列表）
     best_feat=choose_best_feature_split(dataset)
      # 取出该特征对应的名称（可读性用）
     best_feat_label=labels[best_feat]
@@ -189,6 +200,7 @@ def creat_tree(dataset,labels):
     for value in unique_vals:
         sub_labels=labels[:]   # 拷贝一份标签名列表给子递归使用
         # 把当前特征=某取值的样本切分出来
+        sub_labels=labels[:]
         my_tree[best_feat_label][value]=creat_tree(split_dataset(dataset,best_feat,value),sub_labels)
     return my_tree
 
@@ -204,6 +216,7 @@ matplotlib.rcParams['axes.unicode_minus'] = False
 #decision_node：定义“决策节点”的外观样式。
 #boxstyle="sawtooth" 表示锯齿边框，常用于显示决策节点；
 #fc='0.8'（facecolor）填充颜色为灰白色（0.8 表示灰度级）。
+# ===================== 绘图相关函数（保持你原来的实现）=====================
 decision_node=dict(boxstyle="sawtooth",fc='0.8')
 
 #leaf_node：定义“叶节点”的样式。
@@ -230,7 +243,7 @@ arrow_args=dict(arrowstyle="<-")
 #     create_plot.ax1.annotate(node_txt,xy=parent_pt,xycoords='axes fraction',
 #                              xytext=center_pt,textcoords='axes fraction',
 #                              va='center',ha='center',bbox=node_type,arrowprops=arrow_args)
-    
+
 
 def plot_node(ax, node_txt, center_pt, parent_pt, node_type):
     ax.annotate(node_txt,
@@ -239,7 +252,7 @@ def plot_node(ax, node_txt, center_pt, parent_pt, node_type):
                 va="center", ha="center",
                 bbox=node_type, arrowprops=arrow_args,
                 fontsize=11, color='black')
-    
+
 def create_plot():
     fig=plt.figure(1,facecolor='white')  ## 新建一张图，背景白色
     fig.clf()                             # 清空之前的内容（防止重叠）
@@ -253,31 +266,7 @@ def get_num_leafs(my_tree):
     first_str = next(iter(my_tree))
     second_dict = my_tree[first_str]
     num_leafs = 0
-    for key in second_dict:
-        if isinstance(second_dict[key], dict):
-            num_leafs += get_num_leafs(second_dict[key])
-        else:
-            num_leafs += 1
-    return num_leafs
-
-def get_tree_depth(my_tree):
-    first_str = next(iter(my_tree))
-    second_dict = my_tree[first_str]
-    max_depth = 0
-    for key in second_dict:
-        if isinstance(second_dict[key], dict):
-            this_depth = 1 + get_tree_depth(second_dict[key])
-        else:
-            this_depth = 1
-        if this_depth > max_depth:
-            max_depth = this_depth
-    return max_depth
-
-def plot_mid_text(ax, center_pt, parent_pt, txt_string):
-    x_mid = (parent_pt[0] + center_pt[0]) / 2.0
-    y_mid = (parent_pt[1] + center_pt[1]) / 2.0
-    ax.text(x_mid, y_mid, txt_string, va="center", ha="center", fontsize=10)
-
+@@ -281,67 +126,96 @@ def plot_mid_text(ax, center_pt, parent_pt, txt_string):
 def plot_tree(ax, my_tree, parent_pt, node_txt, total_w, total_d, x_off_y):
     first_str = next(iter(my_tree))
     child_dict = my_tree[first_str]
@@ -308,6 +297,7 @@ def plot_tree(ax, my_tree, parent_pt, node_txt, total_w, total_d, x_off_y):
 
 def create_plot(my_tree):
     fig, ax = plt.subplots(figsize=(8, 6))
+    fig, ax = plt.subplots(figsize=(10, 6))  # 调整图大小，避免节点重叠
     ax.set_axis_off()
 
     total_w = float(get_num_leafs(my_tree))
@@ -341,7 +331,78 @@ weather_data = [
 
 # 特征标签
 labels = ['Outlook', 'Temperature', 'Humidity', 'Windy']
+# ===================== 新增：数据集加载、预测、评估函数=====================
+def load_lenses_data():
+    """加载lenses.txt数据集"""
+    dataset = []
+    with open('lenses.txt', 'r', encoding='utf-8') as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            sample = line.split() if '\t' not in line else line.split('\t')
+            dataset.append(sample)
+    feature_names = ['age', 'prescription', 'astigmatic', 'tear_rate']
+    return dataset, feature_names
+
+def predict_sample(tree_model, feature_names, sample):
+    """对单个样本预测"""
+    current_node = tree_model
+    while isinstance(current_node, dict):
+        feature_name = next(iter(current_node.keys()))
+        feature_idx = feature_names.index(feature_name)
+        sample_feature_val = sample[feature_idx]
+        if sample_feature_val in current_node[feature_name]:
+            current_node = current_node[feature_name][sample_feature_val]
+        else:
+            child_nodes = current_node[feature_name]
+            labels = []
+            for val, node in child_nodes.items():
+                if not isinstance(node, dict):
+                    labels.append(node)
+            return majority_cnt(labels)[0][0]
+    return current_node
+
+def calculate_accuracy(tree_model, feature_names, dataset):
+    """计算训练集准确率"""
+    correct_count = 0
+    total_count = len(dataset)
+    for sample in dataset:
+        sample_features = sample[:-1]
+        true_label = sample[-1]
+        pred_label = predict_sample(tree_model, feature_names, sample_features)
+        if pred_label == true_label:
+            correct_count += 1
+    return round(correct_count / total_count, 4) if total_count > 0 else 0.0
+
+# ===================== 主函数（程序入口）=====================
+def main():
+    # 1. 加载数据集
+    dataset, feature_names = load_lenses_data()
+    print(f"数据集样本数：{len(dataset)}")
+    print(f"特征名称：{feature_names}")
+    print(f"前3个样本：{dataset[:3]}\n")
+
+    # 2. 训练ID3决策树（传入特征名称拷贝，避免原列表被修改）
+    tree_model = creat_tree(dataset, feature_names.copy())  # 直接调用本地函数，无模块冲突
+    print(f"训练好的决策树：\n{tree_model}\n")
+
+    # 3. 计算准确率
+    accuracy = calculate_accuracy(tree_model, feature_names, dataset)
+    print(f"训练集准确率：{accuracy * 100:.2f}%\n")
+
+    # 4. 绘制决策树（截图保存）
+    create_plot(tree_model)
 
 # 生成决策树
 tree = creat_tree(weather_data, labels[:])  # 注意传入拷贝 labels[:]
+create_plot(tree)
+# ===================== 运行程序 =====================
+if __name__ == "__main__":
+    main()
+
+
+# 生成决策树
+tree = creat_tree(weather_data, labels[:])  # 注意传入拷贝 labels[:]
+
 create_plot(tree)
