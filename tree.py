@@ -48,8 +48,7 @@ def create_dataSet():
     return dataset, labels
 
 
-dataset, labels = create_dataSet()
-print(cal_shannon_ent(dataset))
+
 
 
 def split_dataset(dataset, axis, value):
@@ -80,16 +79,16 @@ def split_dataset(dataset, axis, value):
     return ret_dataset
 
 
-# 示例数据集：最后一列是标签
-dataset_test = [
-    [1, 'sunny', 'yes'],
-    [1, 'rainy', 'no'],
-    [0, 'sunny', 'yes']
-]
+# # 示例数据集：最后一列是标签
+# dataset_test = [
+#     [1, 'sunny', 'yes'],
+#     [1, 'rainy', 'no'],
+#     [0, 'sunny', 'yes']
+# ]
 
-# 按第0列的值为1来划分
-result = split_dataset(dataset_test, 0, 1)
-print(result)
+# # 按第0列的值为1来划分
+# result = split_dataset(dataset_test, 0, 1)
+# print(result)
 
 
 def choose_best_feature_split(dataset):
@@ -107,7 +106,7 @@ def choose_best_feature_split(dataset):
     base_entropy = cal_shannon_ent(dataset)
     # 3. 初始化“最大信息增益”和“最佳特征”
     best_info_gain = 0.0
-    best_feature = 1
+    best_feature = -1
     # 4. 遍历每一个特征，计算它的信息增益
     for i in range(num_features):
         # 4.1 提取出该特征所有样本的取值列表
@@ -162,7 +161,7 @@ def majority_cnt(class_list):
     # 按出现次数排序
      # 降序排列
     sorted_class_count=sorted(class_count.items(),key=operator.itemgetter(1),reverse=True)
-    return sorted_class_count
+    return sorted_class_count[0][0]
 
 def creat_tree(dataset,labels):
     # 取出数据集中每条样本的“标签列”（通常是最后一列）
@@ -195,7 +194,40 @@ def creat_tree(dataset,labels):
 # my_data,labels=create_dataSet()
 # my_tree=creat_tree(my_data,labels)
 
+def load_lenses_data(filename):
+    """
+    加载 lenses.txt 数据集
+    """
+    with open(filename, 'r') as f:
+        lenses = [line.strip().split('\t') for line in f.readlines()]
+    return lenses
 
+def classify(input_tree, feat_labels, test_vec):
+    """
+    使用决策树进行分类预测
+    """
+    first_str = next(iter(input_tree))
+    second_dict = input_tree[first_str]
+    feat_index = feat_labels.index(first_str)
+    
+    for key in second_dict.keys():
+        if test_vec[feat_index] == key:
+            if isinstance(second_dict[key], dict):
+                class_label = classify(second_dict[key], feat_labels, test_vec)
+            else:
+                class_label = second_dict[key]
+    return class_label
+
+def calc_accuracy(input_tree, feat_labels, data_set):
+    """
+    计算决策树在数据集上的准确率
+    """
+    correct_count = 0
+    for sample in data_set:
+        predict = classify(input_tree, feat_labels, sample[:-1])
+        if predict == sample[-1]:
+            correct_count += 1
+    return correct_count / len(data_set)
 # 支持中文
 matplotlib.rcParams['font.sans-serif'] = ['SimHei']
 matplotlib.rcParams['axes.unicode_minus'] = False
@@ -322,26 +354,44 @@ def create_plot(my_tree):
 
 # ========== 运行：建树 + 绘图 ==========
 # 示例数据集：天气与打球 (Play Tennis)
-weather_data = [
-    ['Sunny', 'Hot', 'High', False, 'No'],
-    ['Sunny', 'Hot', 'High', True, 'No'],
-    ['Overcast', 'Hot', 'High', False, 'Yes'],
-    ['Rain', 'Mild', 'High', False, 'Yes'],
-    ['Rain', 'Cool', 'Normal', False, 'Yes'],
-    ['Rain', 'Cool', 'Normal', True, 'No'],
-    ['Overcast', 'Cool', 'Normal', True, 'Yes'],
-    ['Sunny', 'Mild', 'High', False, 'No'],
-    ['Sunny', 'Cool', 'Normal', False, 'Yes'],
-    ['Rain', 'Mild', 'Normal', False, 'Yes'],
-    ['Sunny', 'Mild', 'Normal', True, 'Yes'],
-    ['Overcast', 'Mild', 'High', True, 'Yes'],
-    ['Overcast', 'Hot', 'Normal', False, 'Yes'],
-    ['Rain', 'Mild', 'High', True, 'No']
-]
+# weather_data = [
+#     ['Sunny', 'Hot', 'High', False, 'No'],
+#     ['Sunny', 'Hot', 'High', True, 'No'],
+#     ['Overcast', 'Hot', 'High', False, 'Yes'],
+#     ['Rain', 'Mild', 'High', False, 'Yes'],
+#     ['Rain', 'Cool', 'Normal', False, 'Yes'],
+#     ['Rain', 'Cool', 'Normal', True, 'No'],
+#     ['Overcast', 'Cool', 'Normal', True, 'Yes'],
+#     ['Sunny', 'Mild', 'High', False, 'No'],
+#     ['Sunny', 'Cool', 'Normal', False, 'Yes'],
+#     ['Rain', 'Mild', 'Normal', False, 'Yes'],
+#     ['Sunny', 'Mild', 'Normal', True, 'Yes'],
+#     ['Overcast', 'Mild', 'High', True, 'Yes'],
+#     ['Overcast', 'Hot', 'Normal', False, 'Yes'],
+#     ['Rain', 'Mild', 'High', True, 'No']
+# ]
 
-# 特征标签
-labels = ['Outlook', 'Temperature', 'Humidity', 'Windy']
+# # 特征标签
+# labels = ['Outlook', 'Temperature', 'Humidity', 'Windy']
 
-# 生成决策树
-tree = creat_tree(weather_data, labels[:])  # 注意传入拷贝 labels[:]
-create_plot(tree)
+# # 生成决策树
+# tree = creat_tree(weather_data, labels[:])  # 注意传入拷贝 labels[:]
+# create_plot(tree)
+if __name__ == '__main__':
+    # 1. 加载 lenses.txt 数据集
+    lenses_data = load_lenses_data('lenses.txt')
+    
+    # 2. 定义特征标签
+    lenses_labels = ['age', 'prescript', 'astigmatic', 'tear_rate']
+    
+    # 3. 训练决策树
+    lenses_tree = creat_tree(lenses_data, lenses_labels[:])  # 注意传入拷贝 lenses_labels[:]
+    print("生成的决策树结构:")
+    print(lenses_tree)
+    
+    # 4. 绘制决策树
+    create_plot(lenses_tree)
+    
+    # 5. 计算训练集准确率
+    accuracy = calc_accuracy(lenses_tree, ['age', 'prescript', 'astigmatic', 'tear_rate'], lenses_data)
+    print(f"训练集准确率: {accuracy:.2%}")
