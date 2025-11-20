@@ -345,3 +345,64 @@ labels = ['Outlook', 'Temperature', 'Humidity', 'Windy']
 # 生成决策树
 tree = creat_tree(weather_data, labels[:])  # 注意传入拷贝 labels[:]
 create_plot(tree)
+
+def load_lenses_data(filename):
+    """加载隐形眼镜数据集"""
+    with open(filename, 'r') as f:
+        lenses = [line.strip().split('\t') for line in f.readlines()]
+    return lenses
+
+def classify(input_tree, feat_labels, test_vec):
+    """使用决策树进行分类"""
+    first_str = list(input_tree.keys())[0]
+    second_dict = input_tree[first_str]
+    feat_index = feat_labels.index(first_str)
+
+    for key in second_dict.keys():
+        if test_vec[feat_index] == key:
+            if type(second_dict[key]).__name__ == 'dict':
+                class_label = classify(second_dict[key], feat_labels, test_vec)
+            else:
+                class_label = second_dict[key]
+            return class_label
+
+def calculate_accuracy(tree, dataset, labels):
+    """计算准确率"""
+    correct = 0
+    for data in dataset:
+        true_label = data[-1]
+        predicted = classify(tree, labels, data[:-1])
+        if predicted == true_label:
+            correct += 1
+    return correct / len(dataset)
+
+# 主程序
+if __name__ == "__main__":
+    # 加载隐形眼镜数据
+    print("=== 隐形眼镜类型预测 ===")
+    lenses_data = load_lenses_data('lenses.txt')
+    lenses_labels = ['age', 'prescript', 'astigmatic', 'tearRate']
+
+    print(f"数据集大小: {len(lenses_data)}")
+    print("前5条数据:")
+    for i in range(5):
+        print(f"  {lenses_data[i]}")
+
+    # 训练决策树
+    lenses_tree = creat_tree(lenses_data, lenses_labels[:])
+    print("\n生成的决策树:")
+    print(lenses_tree)
+
+    # 计算准确率
+    accuracy = calculate_accuracy(lenses_tree, lenses_data, lenses_labels)
+    print(f"\n训练集准确率: {accuracy * 100:.2f}%")
+
+    # 绘制决策树
+    print("\n绘制决策树...")
+    create_plot(lenses_tree)
+
+    # 示例预测
+    print("\n示例预测:")
+    test_case = ['young', 'myope', 'no', 'normal']  # 应该预测为 'soft'
+    prediction = classify(lenses_tree, lenses_labels, test_case)
+    print(f"输入: {test_case} -> 预测: {prediction}")
