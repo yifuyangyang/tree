@@ -19,3 +19,5 @@
 2. 在你自己的仓库中完成实验；
 3. 提交并推送；
 4. 发起 Pull Request，标题为 `学号-姓名-决策树`
+![alt text](image.png)
+![alt text](image-1.png)
