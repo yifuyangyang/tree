@@ -322,26 +322,56 @@ def create_plot(my_tree):
 
 # ========== 运行：建树 + 绘图 ==========
 # 示例数据集：天气与打球 (Play Tennis)
-weather_data = [
-    ['Sunny', 'Hot', 'High', False, 'No'],
-    ['Sunny', 'Hot', 'High', True, 'No'],
-    ['Overcast', 'Hot', 'High', False, 'Yes'],
-    ['Rain', 'Mild', 'High', False, 'Yes'],
-    ['Rain', 'Cool', 'Normal', False, 'Yes'],
-    ['Rain', 'Cool', 'Normal', True, 'No'],
-    ['Overcast', 'Cool', 'Normal', True, 'Yes'],
-    ['Sunny', 'Mild', 'High', False, 'No'],
-    ['Sunny', 'Cool', 'Normal', False, 'Yes'],
-    ['Rain', 'Mild', 'Normal', False, 'Yes'],
-    ['Sunny', 'Mild', 'Normal', True, 'Yes'],
-    ['Overcast', 'Mild', 'High', True, 'Yes'],
-    ['Overcast', 'Hot', 'Normal', False, 'Yes'],
-    ['Rain', 'Mild', 'High', True, 'No']
-]
+def load_lenses_data(filename):
+    """
+    加载隐形眼镜数据集
+    """
+    with open(filename, 'r') as fr:
+        lenses = [inst.strip().split('\t') for inst in fr.readlines()]
+    
+    # 特征标签
+    lenses_labels = ['age', 'prescription', 'astigmatic', 'tear_rate']
+    return lenses, lenses_labels
 
-# 特征标签
-labels = ['Outlook', 'Temperature', 'Humidity', 'Windy']
+def classify(input_tree, feat_labels, test_vec):
+    """
+    使用决策树进行分类预测
+    """
+    first_str = next(iter(input_tree))
+    second_dict = input_tree[first_str]
+    feat_index = feat_labels.index(first_str)
+    
+    for key in second_dict:
+        if test_vec[feat_index] == key:
+            if isinstance(second_dict[key], dict):
+                class_label = classify(second_dict[key], feat_labels, test_vec)
+            else:
+                class_label = second_dict[key]
+    return class_label
+
+def calc_accuracy(input_tree, feat_labels, data_set):
+    """
+    计算决策树在数据集上的准确率
+    """
+    correct = 0
+    for data in data_set:
+        predict = classify(input_tree, feat_labels, data[:-1])
+        if predict == data[-1]:
+            correct += 1
+    return correct / len(data_set)
+
+# ========== 运行：建树 + 绘图 ==========
+# 加载隐形眼镜数据集
+lenses_data, lenses_labels = load_lenses_data('lenses.txt')
 
 # 生成决策树
-tree = creat_tree(weather_data, labels[:])  # 注意传入拷贝 labels[:]
-create_plot(tree)
+lenses_tree = creat_tree(lenses_data, lenses_labels[:])  # 注意传入拷贝 labels[:]
+print("生成的决策树:")
+print(lenses_tree)
+
+# 绘制决策树
+create_plot(lenses_tree)
+
+# 计算并打印训练集准确率
+accuracy = calc_accuracy(lenses_tree, ['age', 'prescription', 'astigmatic', 'tear_rate'], lenses_data)
+print(f"训练集准确率: {accuracy:.2%}")
