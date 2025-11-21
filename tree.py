@@ -40,7 +40,7 @@ def create_dataSet():
     熵接近 0,类别越集中，数据集越“纯”或“确定性越强”
     """
     dataset = [[1, 1, 'yes'],
-               [1.1, 'yes'],
+               [1,1, 'yes'],
                [1, 0, 'no'],
                [0, 1, 'no'],
                [0, 1, 'no']]
@@ -320,7 +320,19 @@ def create_plot(my_tree):
     plt.tight_layout()
     plt.show()
 
-# ========== 运行：建树 + 绘图 ==========
+
+def classify(input_tree,feature_labels,test_vec):
+    root = next(iter(input_tree))
+    child_dict = input_tree[root]
+    feat_index = feature_labels.index(root)
+    feat_value = test_vec[feat_index]
+    if feat_value not in child_dict:
+        return "unknown"
+    branch = child_dict[feat_value]
+    if isinstance(branch,dict):
+        return classify(branch,feature_labels,test_vec)
+    else:
+        return branch
 # 示例数据集：天气与打球 (Play Tennis)
 weather_data = [
     ['Sunny', 'Hot', 'High', False, 'No'],
@@ -343,5 +355,28 @@ weather_data = [
 labels = ['Outlook', 'Temperature', 'Humidity', 'Windy']
 
 # 生成决策树
-tree = creat_tree(weather_data, labels[:])  # 注意传入拷贝 labels[:]
-create_plot(tree)
+#tree = creat_tree(weather_data, labels[:])  # 注意传入拷贝 labels[:]
+#create_plot(tree)
+
+def load_lenses(path):
+    data = []
+    with open(path,'r',encoding='utf-8') as f:
+        for line in f:
+            parts = line.strip().split()
+            if parts:
+                data.append(parts)
+    return data
+
+lenses_data = load_lenses(r'C:\Users\E507\Desktop\tree\lenses.txt')
+lenses_labels = ['age','prescription', 'astigmatic', 'tear_rate']
+lenses_tree = creat_tree(lenses_data, lenses_labels[:])
+create_plot(lenses_tree)
+correct = 0
+X_labels = ['age','prescription', 'astigmatic', 'tear_rate']
+for row in lenses_data:
+    x,y = row[:-1],row[-1]
+    yhat = classify(lenses_tree,X_labels,x)
+    correct +=(yhat==y)
+    accuracy = correct / len(lenses_data)
+                
+print(f"训练集上的准确率：{correct}/{len(lenses_data)}={accuracy:.2%}")
