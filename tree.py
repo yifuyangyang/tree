@@ -369,7 +369,7 @@ def load_lenses(path):
                 data.append(parts)
     return data
 
-lenses_data = load_lenses(r'C:\Users\liyan\Desktop\tree\lenses.txt')
+lenses_data = load_lenses(r'.\lenses.txt')
 
 lenses_labels = ['age','prescription', 'astigmatic', 'tear_rate']
 
